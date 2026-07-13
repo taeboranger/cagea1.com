@@ -37,7 +37,16 @@ export default function GalleryUploadForm() {
     try {
       const perFileBudget = MAX_TOTAL_UPLOAD_BYTES / files.length;
       const resized = await Promise.all(
-        files.map((file) => resizeImageToFit(file, perFileBudget))
+        files.map(async (file) => {
+          try {
+            return await resizeImageToFit(file, perFileBudget);
+          } catch (err) {
+            // Fall back to the original file so a single decode failure
+            // doesn't leave input.files unset for the whole batch.
+            console.error(`이미지 리사이즈 실패, 원본으로 대체: ${file.name}`, err);
+            return file;
+          }
+        })
       );
 
       const dataTransfer = new DataTransfer();
