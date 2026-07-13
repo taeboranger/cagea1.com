@@ -3,7 +3,8 @@ import { Shippori_Mincho, Noto_Serif_KR, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import SnowOverlay from "@/components/SnowOverlay";
+import WeatherOverlay from "@/components/WeatherOverlay";
+import { getSkyState } from "@/lib/weather";
 
 const shipporiMincho = Shippori_Mincho({
   variable: "--font-shippori-mincho",
@@ -28,18 +29,21 @@ export const metadata: Metadata = {
   description: "개인 웹사이트 — 이력서와 사진 갤러리",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { brightness } = await getSkyState();
+
   return (
     <html
       lang="ko"
       className={`${shipporiMincho.variable} ${notoSerifKr.variable} ${notoSansKr.variable} h-full antialiased`}
+      style={{ "--sky-brightness": brightness } as React.CSSProperties}
     >
       <body className="paper-texture relative flex min-h-full flex-col font-sans">
-        <SnowOverlay />
+        <WeatherOverlay />
         <SiteHeader />
         <main className="relative z-10 flex flex-1 flex-col">{children}</main>
         <SiteFooter />

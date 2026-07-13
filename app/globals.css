@@ -42,9 +42,24 @@
   --font-sans: var(--font-noto-sans-kr);
 }
 
+:root {
+  --sky-brightness: 1;
+  --sky-dim-target: #141a24;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sky-dim-target: #05070a;
+  }
+}
+
 body {
-  background: var(--color-paper);
+  background: color-mix(
+    in srgb,
+    var(--color-paper) calc(var(--sky-brightness) * 100%),
+    var(--sky-dim-target) calc((1 - var(--sky-brightness)) * 100%)
+  );
   color: var(--color-ink);
+  transition: background-color 2s ease;
 }
 
 /* subtle washi paper grain */
@@ -76,36 +91,73 @@ body {
   }
 }
 
-/* falling snow */
-.snow {
+/* live-weather dot overlay */
+.weather-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
   z-index: 1;
 }
-.snow span {
+.weather-overlay span {
   position: absolute;
-  top: -5%;
   display: block;
-  border-radius: 9999px;
-  background: var(--color-mist);
-  opacity: 0.55;
-  animation-name: snow-fall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
 }
-@keyframes snow-fall {
+
+.weather-overlay--snow span {
+  top: -5%;
+  background: var(--color-mist);
+  animation-name: weather-snow-fall;
+}
+@keyframes weather-snow-fall {
+  0% {
+    transform: translateY(-10vh) translateX(0);
+  }
+  25% {
+    transform: translateY(22vh) translateX(16px);
+  }
+  50% {
+    transform: translateY(55vh) translateX(-12px);
+  }
+  75% {
+    transform: translateY(85vh) translateX(18px);
+  }
+  100% {
+    transform: translateY(110vh) translateX(0);
+  }
+}
+
+.weather-overlay--rain span,
+.weather-overlay--storm span {
+  top: -10%;
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, var(--color-frost));
+  animation-name: weather-rain-fall;
+}
+@keyframes weather-rain-fall {
   0% {
     transform: translateY(-10vh) translateX(0);
   }
   100% {
-    transform: translateY(110vh) translateX(20px);
+    transform: translateY(120vh) translateX(-12px);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .snow span {
-    animation: none;
-    display: none;
+
+.weather-overlay--mist span {
+  background: var(--color-mist);
+  animation-name: weather-mist-drift;
+}
+@keyframes weather-mist-drift {
+  0% {
+    transform: translateX(-15vw) translateY(0);
+  }
+  50% {
+    transform: translateX(15vw) translateY(-3vh);
+  }
+  100% {
+    transform: translateX(-15vw) translateY(0);
   }
 }
+
