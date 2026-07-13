@@ -1,13 +1,21 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
   uploadPhotosAction,
   type UploadPhotosState,
 } from "@/app/actions/gallery";
+import { resizeImageToFit } from "@/lib/resizeImageForUpload";
 
 const initialState: UploadPhotosState = {};
+
+// Must stay under next.config.ts's serverActions.bodySizeLimit (20mb),
+// with headroom for multipart overhead and the caption field.
+const SERVER_BODY_LIMIT_BYTES = 20 * 1024 * 1024;
+const UPLOAD_SAFETY_MARGIN_BYTES = 1 * 1024 * 1024;
+const MAX_TOTAL_UPLOAD_BYTES =
+  SERVER_BODY_LIMIT_BYTES - UPLOAD_SAFETY_MARGIN_BYTES;
 
 export default function GalleryUploadForm() {
   const [state, formAction, pending] = useActionState(
@@ -15,6 +23,32 @@ export default function GalleryUploadForm() {
     initialState
   );
   const [fileNames, setFileNames] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  async function handleFilesChange(e: ChangeEvent<HTMLInputElement>) {
+    const input = e.target;
+    const files = Array.from(input.files ?? []);
+    if (files.length === 0) {
+      setFileNames([]);
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const perFileBudget = MAX_TOTAL_UPLOAD_BYTES / files.length;
+      const resized = await Promise.all(
+        files.map((file) => resizeImageToFit(file, perFileBudget))
+      );
+
+      const dataTransfer = new DataTransfer();
+      resized.forEach((file) => dataTransfer.items.add(file));
+      input.files = dataTransfer.files;
+
+      setFileNames(resized.map((f) => f.name));
+    } finally {
+      setIsProcessing(false);
+    }
+  }
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-6">
@@ -29,11 +63,15 @@ export default function GalleryUploadForm() {
           accept="image/jpeg,image/png,image/webp,image/gif"
           multiple
           required
-          onChange={(e) =>
-            setFileNames(Array.from(e.target.files ?? []).map((f) => f.name))
-          }
+          onChange={handleFilesChange}
           className="font-sans text-sm text-ink-soft file:mr-4 file:border file:border-line file:bg-transparent file:px-3 file:py-2 file:font-sans file:text-sm file:text-ink-soft"
         />
+        <p className="font-sans text-xs text-mist">
+          용량이 큰 사진은 업로드 전 자동으로 리사이즈됩니다.
+        </p>
+        {isProcessing && (
+          <p className="font-sans text-xs text-ink-soft">이미지 처리 중...</p>
+        )}
         {fileNames.length > 0 && (
           <ul className="font-sans text-xs text-mist">
             {fileNames.map((name) => (
@@ -63,10 +101,10 @@ export default function GalleryUploadForm() {
       <div className="flex items-center gap-4">
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || isProcessing}
           className="border border-ink bg-ink px-6 py-3 font-sans text-sm tracking-wide text-paper transition-opacity hover:opacity-85 disabled:opacity-50"
         >
-          {pending ? "업로드 중..." : "업로드"}
+          {pending ? "업로드 중..." : isProcessing ? "이미지 처리 중..." : "업로드"}
         </button>
         <Link
           href="/gallery"
