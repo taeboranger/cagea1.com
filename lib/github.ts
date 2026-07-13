@@ -37,7 +37,10 @@ export async function getMonthlyContributions(): Promise<MonthlyContributions | 
 
   const now = new Date();
   const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const to = now;
+  // GitHub buckets a contribution by the commit's own local date, which can
+  // already read as "tomorrow" while it's still today in UTC. Pad the upper
+  // bound forward so that day's bucket isn't dropped from the response.
+  const to = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
   let json: {
     data?: {
@@ -64,7 +67,7 @@ export async function getMonthlyContributions(): Promise<MonthlyContributions | 
         query: QUERY,
         variables: { login: username, from: from.toISOString(), to: to.toISOString() },
       }),
-      next: { revalidate: 3600 },
+      next: { revalidate: 300 },
     });
 
     if (!res.ok) return null;
