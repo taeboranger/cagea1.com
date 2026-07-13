@@ -1,26 +1,111 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: #fbfbfa;
+  --color-paper-raised: #ffffff;
+  --color-ink: #232c38;
+  --color-ink-soft: #5c6773;
+  --color-mist: #8695a3;
+  --color-accent: #a8443e;
+  --color-accent-soft: #c17d6a;
+  --color-frost: #3f7fb0;
+  --color-line: rgba(35, 44, 56, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --color-paper: #232c38;
+    --color-paper-raised: #2b3644;
+    --color-ink: #f3f5f6;
+    --color-ink-soft: #c3ccd4;
+    --color-mist: #93a2b1;
+    --color-accent: #d8877a;
+    --color-accent-soft: #9c5b52;
+    --color-frost: #7ec3e8;
+    --color-line: rgba(243, 245, 246, 0.16);
   }
 }
 
+@theme inline {
+  --color-paper: var(--color-paper);
+  --color-paper-raised: var(--color-paper-raised);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-mist: var(--color-mist);
+  --color-accent: var(--color-accent);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-frost: var(--color-frost);
+  --color-line: var(--color-line);
+
+  --font-display: var(--font-shippori-mincho);
+  --font-serif: var(--font-noto-serif-kr);
+  --font-sans: var(--font-noto-sans-kr);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* subtle washi paper grain */
+.paper-texture {
+  position: relative;
+}
+.paper-texture::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image: radial-gradient(
+      rgba(26, 34, 48, 0.05) 0.5px,
+      transparent 0.5px
+    ),
+    radial-gradient(rgba(26, 34, 48, 0.04) 0.5px, transparent 0.5px);
+  background-size: 3px 3px, 7px 7px;
+  background-position: 0 0, 1.5px 3.5px;
+}
+@media (prefers-color-scheme: dark) {
+  .paper-texture::before {
+    background-image: radial-gradient(
+        rgba(255, 255, 255, 0.035) 0.5px,
+        transparent 0.5px
+      ),
+      radial-gradient(rgba(255, 255, 255, 0.03) 0.5px, transparent 0.5px);
+  }
+}
+
+/* falling snow */
+.snow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.snow span {
+  position: absolute;
+  top: -5%;
+  display: block;
+  border-radius: 9999px;
+  background: var(--color-mist);
+  opacity: 0.55;
+  animation-name: snow-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes snow-fall {
+  0% {
+    transform: translateY(-10vh) translateX(0);
+  }
+  100% {
+    transform: translateY(110vh) translateX(20px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .snow span {
+    animation: none;
+    display: none;
+  }
 }

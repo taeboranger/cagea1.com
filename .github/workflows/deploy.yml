@@ -1,0 +1,54 @@
+# Zero-downtime deploy via a self-hosted runner on the EC2 instance itself.
+# No SSH/inbound access is needed for this - the runner polls GitHub outbound,
+# so the security group can stay locked down to your own IP.
+#
+# One-time EC2 setup:
+#   - Node.js and PM2 installed (npm i -g pm2)
+#   - Register a self-hosted runner for this repo:
+#       Settings -> Actions -> Runners -> New self-hosted runner
+#     and follow the printed commands on the EC2 box, then install it as a
+#     service so it survives reboots and keeps running unattended:
+#       ./svc.sh install && ./svc.sh start
+#   - `pm2 startup` run once so PM2 itself survives a reboot
+#
+# Required repository secret (Settings -> Secrets and variables -> Actions):
+#   PRODUCTION_ENV   full contents of the production .env file (SITE_USERNAME,
+#                    SITE_PASSWORD, SITE_AUTH_SECRET, GITHUB_USERNAME, GITHUB_TOKEN, etc.)
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Never clean untracked files: data/*.json (resume/gallery/notes)
+          # and public/uploads/ live only on this box and must survive deploys.
+          clean: false
+
+      - name: Write .env
+        env:
+          PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
+        run: printf '%s\n' "$PRODUCTION_ENV" > .env
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Reload with PM2 (zero-downtime)
+        run: |
+          pm2 startOrReload ecosystem.config.js
+          pm2 save
