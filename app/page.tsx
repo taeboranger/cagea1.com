@@ -1,24 +1,25 @@
 import Link from "next/link";
 import Image from "next/image";
+import { isAuthenticated } from "@/lib/auth";
 import { getResume } from "@/lib/resume";
 import { getPhotos } from "@/lib/gallery";
 import { getMonthlyContributions } from "@/lib/github";
 import GithubContributions from "@/components/GithubContributions";
 
 export default async function Home() {
-  const [resume, photos, contributions] = await Promise.all([
+  const [resume, photos, contributions, authed] = await Promise.all([
     getResume(),
     getPhotos(),
     getMonthlyContributions(),
+    isAuthenticated(),
   ]);
   const previewPhotos = photos.slice(0, 8);
+  const showResumeLink = resume.isPublic || authed;
 
   return (
     <div className="flex flex-1 flex-col">
       <section className="flex min-h-[70vh] flex-col items-center justify-center px-6 py-24 text-center sm:px-10">
-        <p className="font-sans text-xs tracking-[0.3em] text-mist">
-          WELCOME
-        </p>
+        <p className="font-sans text-xs tracking-[0.3em] text-mist">WELCOME</p>
 
         <h1 className="mt-6 font-serif text-4xl text-ink sm:text-5xl">
           {resume.name}
@@ -33,12 +34,14 @@ export default async function Home() {
         <div className="my-10 h-px w-16 bg-line" />
 
         <div className="flex flex-col gap-4 sm:flex-row">
-          <Link
-            href="/resume"
-            className="border border-ink px-8 py-3 font-sans text-sm tracking-wide text-ink transition-colors hover:bg-ink hover:text-paper"
-          >
-            이력서 보기
-          </Link>
+          {showResumeLink && (
+            <Link
+              href="/resume"
+              className="border border-ink px-8 py-3 font-sans text-sm tracking-wide text-ink transition-colors hover:bg-ink hover:text-paper"
+            >
+              이력서 보기
+            </Link>
+          )}
           <Link
             href="/gallery"
             className="border border-line px-8 py-3 font-sans text-sm tracking-wide text-ink-soft transition-colors hover:border-accent hover:text-accent"

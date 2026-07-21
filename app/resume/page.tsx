@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth";
 import { getResume } from "@/lib/resume";
+import { toggleResumeVisibilityAction } from "@/app/actions/resume";
 
 export const metadata: Metadata = {
   title: "이력서 — cagea1.com",
@@ -93,6 +95,10 @@ function groupSkills(skills: string[]): [string, string[]][] {
 export default async function ResumePage() {
   const [resume, authed] = await Promise.all([getResume(), isAuthenticated()]);
 
+  if (!resume.isPublic && !authed) {
+    notFound();
+  }
+
   const contactItems = [
     resume.email,
     resume.phone,
@@ -118,12 +124,27 @@ export default async function ResumePage() {
             )}
           </div>
           {authed && (
-            <Link
-              href="/resume/edit"
-              className="shrink-0 border border-line px-4 py-2 font-sans text-sm text-ink-soft transition-colors hover:border-accent hover:text-accent"
-            >
-              편집
-            </Link>
+            <div className="flex shrink-0 items-center gap-2">
+              {!resume.isPublic && (
+                <span className="border border-accent/40 px-2 py-1 font-sans text-xs text-accent">
+                  비공개
+                </span>
+              )}
+              <form action={toggleResumeVisibilityAction}>
+                <button
+                  type="submit"
+                  className="border border-line px-4 py-2 font-sans text-sm text-ink-soft transition-colors hover:border-accent hover:text-accent"
+                >
+                  {resume.isPublic ? "비공개로 전환" : "공개로 전환"}
+                </button>
+              </form>
+              <Link
+                href="/resume/edit"
+                className="border border-line px-4 py-2 font-sans text-sm text-ink-soft transition-colors hover:border-accent hover:text-accent"
+              >
+                편집
+              </Link>
+            </div>
           )}
         </div>
 

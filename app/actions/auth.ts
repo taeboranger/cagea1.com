@@ -1,11 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import {
-  clearSessionCookie,
-  setSessionCookie,
-  verifyCredentials,
-} from "@/lib/auth";
+import { setSessionCookie, verifyCredentials } from "@/lib/auth";
 
 export type LoginState = {
   error?: string;
@@ -13,7 +9,7 @@ export type LoginState = {
 
 export async function login(
   _prevState: LoginState,
-  formData: FormData
+  formData: FormData,
 ): Promise<LoginState> {
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -25,9 +21,4 @@ export async function login(
 
   await setSessionCookie();
   redirect(redirectTo.startsWith("/") ? redirectTo : "/");
-}
-
-export async function logout() {
-  await clearSessionCookie();
-  redirect("/");
 }

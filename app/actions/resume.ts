@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuthAction } from "@/lib/auth";
 import {
+  getResume,
   saveResume,
   type ResumeData,
   type ResumeEducation,
@@ -45,6 +46,7 @@ export async function saveResumeAction(
   formData: FormData,
 ): Promise<SaveResumeState> {
   await requireAuthAction();
+  const current = await getResume();
 
   const name = String(formData.get("name") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
@@ -88,6 +90,7 @@ export async function saveResumeAction(
     education,
     projects,
     skills,
+    isPublic: current.isPublic,
     updatedAt: "",
   };
 
@@ -126,6 +129,7 @@ export async function saveResumeJsonAction(
   formData: FormData,
 ): Promise<SaveResumeJsonState> {
   await requireAuthAction();
+  const current = await getResume();
 
   const raw = String(formData.get("json") ?? "");
   let parsed: unknown;
@@ -173,10 +177,20 @@ export async function saveResumeJsonAction(
     skills: Array.isArray(obj.skills)
       ? obj.skills.filter((s): s is string => typeof s === "string")
       : [],
+    isPublic:
+      typeof obj.isPublic === "boolean" ? obj.isPublic : current.isPublic,
     updatedAt: "",
   };
 
   await saveResume(data);
   revalidatePath("/resume");
   redirect("/resume");
+}
+
+export async function toggleResumeVisibilityAction() {
+  await requireAuthAction();
+  const current = await getResume();
+  await saveResume({ ...current, isPublic: !current.isPublic });
+  revalidatePath("/resume");
+  revalidatePath("/");
 }

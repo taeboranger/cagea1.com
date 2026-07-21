@@ -37,6 +37,7 @@ export interface ResumeData {
   education: ResumeEducation[];
   projects: ResumeProject[];
   skills: string[];
+  isPublic: boolean;
   updatedAt: string;
 }
 
@@ -55,6 +56,7 @@ const DEFAULT_RESUME: ResumeData = {
   education: [],
   projects: [],
   skills: [],
+  isPublic: true,
   updatedAt: new Date().toISOString(),
 };
 
@@ -63,7 +65,11 @@ async function ensureFile() {
   try {
     await readFile(DATA_FILE, "utf-8");
   } catch {
-    await writeFile(DATA_FILE, JSON.stringify(DEFAULT_RESUME, null, 2), "utf-8");
+    await writeFile(
+      DATA_FILE,
+      JSON.stringify(DEFAULT_RESUME, null, 2),
+      "utf-8",
+    );
   }
 }
 
