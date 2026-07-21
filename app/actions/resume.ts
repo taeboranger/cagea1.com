@@ -19,7 +19,7 @@ export type SaveResumeState = {
 function collectRows<T extends Record<string, string>>(
   formData: FormData,
   prefix: string,
-  fields: (keyof T)[]
+  fields: (keyof T)[],
 ): T[] {
   const indices = new Set<number>();
   const pattern = new RegExp(`^${prefix}\\.(\\d+)\\.`);
@@ -42,7 +42,7 @@ function collectRows<T extends Record<string, string>>(
 
 export async function saveResumeAction(
   _prevState: SaveResumeState,
-  formData: FormData
+  formData: FormData,
 ): Promise<SaveResumeState> {
   await requireAuthAction();
 
@@ -56,19 +56,19 @@ export async function saveResumeAction(
   const experience = collectRows<
     Omit<ResumeExperience, "id"> & { id?: string }
   >(formData, "experience", ["company", "role", "period", "description"]).map(
-    (row) => ({ id: randomUUID(), ...row })
+    (row) => ({ id: randomUUID(), ...row }),
   );
 
   const education = collectRows<Omit<ResumeEducation, "id"> & { id?: string }>(
     formData,
     "education",
-    ["school", "degree", "period"]
+    ["school", "degree", "period"],
   ).map((row) => ({ id: randomUUID(), ...row }));
 
   const projects = collectRows<Omit<ResumeProject, "id"> & { id?: string }>(
     formData,
     "projects",
-    ["title", "period", "link", "description"]
+    ["title", "period", "link", "description"],
   ).map((row) => ({ id: randomUUID(), ...row }));
 
   const skills = String(formData.get("skills") ?? "")
@@ -88,6 +88,91 @@ export async function saveResumeAction(
     education,
     projects,
     skills,
+    updatedAt: "",
+  };
+
+  await saveResume(data);
+  revalidatePath("/resume");
+  redirect("/resume");
+}
+
+export type SaveResumeJsonState = {
+  error?: string;
+};
+
+function normalizeRows<T extends { id: string }>(
+  value: unknown,
+  fields: (keyof T)[],
+): T[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((row) => {
+    const source = (row && typeof row === "object" ? row : {}) as Record<
+      string,
+      unknown
+    >;
+    const out = {
+      id: typeof source.id === "string" && source.id ? source.id : randomUUID(),
+    } as T;
+    for (const field of fields) {
+      const raw = source[field as string];
+      out[field] = (typeof raw === "string" ? raw : "") as T[typeof field];
+    }
+    return out;
+  });
+}
+
+export async function saveResumeJsonAction(
+  _prevState: SaveResumeJsonState,
+  formData: FormData,
+): Promise<SaveResumeJsonState> {
+  await requireAuthAction();
+
+  const raw = String(formData.get("json") ?? "");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { error: "올바른 JSON 형식이 아닙니다." };
+  }
+
+  if (typeof parsed !== "object" || parsed === null) {
+    return { error: "JSON 객체 형식이어야 합니다." };
+  }
+  const obj = parsed as Record<string, unknown>;
+
+  const name = typeof obj.name === "string" ? obj.name.trim() : "";
+  if (!name) {
+    return { error: "이름(name) 필드를 입력해주세요." };
+  }
+
+  const data: ResumeData = {
+    name,
+    title: typeof obj.title === "string" ? obj.title : "",
+    email: typeof obj.email === "string" ? obj.email : "",
+    phone: typeof obj.phone === "string" ? obj.phone : "",
+    location: typeof obj.location === "string" ? obj.location : "",
+    website: typeof obj.website === "string" ? obj.website : "",
+    summary: typeof obj.summary === "string" ? obj.summary : "",
+    experience: normalizeRows<ResumeExperience>(obj.experience, [
+      "company",
+      "role",
+      "period",
+      "description",
+    ]),
+    education: normalizeRows<ResumeEducation>(obj.education, [
+      "school",
+      "degree",
+      "period",
+    ]),
+    projects: normalizeRows<ResumeProject>(obj.projects, [
+      "title",
+      "period",
+      "link",
+      "description",
+    ]),
+    skills: Array.isArray(obj.skills)
+      ? obj.skills.filter((s): s is string => typeof s === "string")
+      : [],
     updatedAt: "",
   };
 
