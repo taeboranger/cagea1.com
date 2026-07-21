@@ -22,7 +22,7 @@ export default async function Home() {
         <p className="font-sans text-xs tracking-[0.3em] text-mist">WELCOME</p>
 
         <h1 className="mt-6 font-serif text-4xl text-ink sm:text-5xl">
-          {resume.name}
+          CageA
         </h1>
 
         {resume.title && (
