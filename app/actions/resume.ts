@@ -4,13 +4,17 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuthAction } from "@/lib/auth";
+import { sanitizeRichText } from "@/lib/sanitize";
 import {
   getResume,
   saveResume,
+  isSkillLevel,
+  normalizeSkillEntry,
   type ResumeData,
   type ResumeEducation,
   type ResumeExperience,
   type ResumeProject,
+  type ResumeSkill,
 } from "@/lib/resume";
 
 export type SaveResumeState = {
@@ -58,7 +62,11 @@ export async function saveResumeAction(
   const experience = collectRows<
     Omit<ResumeExperience, "id"> & { id?: string }
   >(formData, "experience", ["company", "role", "period", "description"]).map(
-    (row) => ({ id: randomUUID(), ...row }),
+    (row) => ({
+      id: randomUUID(),
+      ...row,
+      description: sanitizeRichText(row.description),
+    }),
   );
 
   const education = collectRows<Omit<ResumeEducation, "id"> & { id?: string }>(
@@ -70,13 +78,25 @@ export async function saveResumeAction(
   const projects = collectRows<Omit<ResumeProject, "id"> & { id?: string }>(
     formData,
     "projects",
-    ["title", "period", "link", "description"],
-  ).map((row) => ({ id: randomUUID(), ...row }));
+    ["title", "period", "link", "githubLink", "description"],
+  ).map((row) => ({
+    id: randomUUID(),
+    ...row,
+    description: sanitizeRichText(row.description),
+  }));
 
-  const skills = String(formData.get("skills") ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const skills = collectRows<Omit<ResumeSkill, "id"> & { id?: string }>(
+    formData,
+    "skills",
+    ["category", "name", "level"],
+  )
+    .map((row) => ({
+      id: randomUUID(),
+      category: row.category.trim() || "기타",
+      name: row.name.trim(),
+      level: isSkillLevel(row.level) ? row.level : "proficient",
+    }))
+    .filter((s) => s.name);
 
   const data: ResumeData = {
     name,
@@ -85,7 +105,7 @@ export async function saveResumeAction(
     phone: String(formData.get("phone") ?? "").trim(),
     location: String(formData.get("location") ?? "").trim(),
     website: String(formData.get("website") ?? "").trim(),
-    summary: String(formData.get("summary") ?? "").trim(),
+    summary: sanitizeRichText(String(formData.get("summary") ?? "").trim()),
     experience,
     education,
     projects,
@@ -156,13 +176,18 @@ export async function saveResumeJsonAction(
     phone: typeof obj.phone === "string" ? obj.phone : "",
     location: typeof obj.location === "string" ? obj.location : "",
     website: typeof obj.website === "string" ? obj.website : "",
-    summary: typeof obj.summary === "string" ? obj.summary : "",
+    summary: sanitizeRichText(
+      typeof obj.summary === "string" ? obj.summary : "",
+    ),
     experience: normalizeRows<ResumeExperience>(obj.experience, [
       "company",
       "role",
       "period",
       "description",
-    ]),
+    ]).map((row) => ({
+      ...row,
+      description: sanitizeRichText(row.description),
+    })),
     education: normalizeRows<ResumeEducation>(obj.education, [
       "school",
       "degree",
@@ -172,10 +197,16 @@ export async function saveResumeJsonAction(
       "title",
       "period",
       "link",
+      "githubLink",
       "description",
-    ]),
+    ]).map((row) => ({
+      ...row,
+      description: sanitizeRichText(row.description),
+    })),
     skills: Array.isArray(obj.skills)
-      ? obj.skills.filter((s): s is string => typeof s === "string")
+      ? obj.skills
+          .map(normalizeSkillEntry)
+          .filter((s): s is ResumeSkill => s !== null)
       : [],
     isPublic:
       typeof obj.isPublic === "boolean" ? obj.isPublic : current.isPublic,

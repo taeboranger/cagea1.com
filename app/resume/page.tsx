@@ -3,8 +3,19 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth";
-import { getResume } from "@/lib/resume";
+import {
+  getResume,
+  SKILL_LEVELS,
+  type ResumeSkill,
+  type SkillLevel,
+} from "@/lib/resume";
 import { toggleResumeVisibilityAction } from "@/app/actions/resume";
+
+const SKILL_LEVEL_LABELS: Record<SkillLevel, string> = {
+  proficient: "숙련",
+  intermediate: "중급",
+  basic: "기초",
+};
 
 export const metadata: Metadata = {
   title: "이력서 — cagea1.com",
@@ -77,17 +88,51 @@ function renderDescription(text: string): ReactNode {
   return <div className="mt-2">{blocks}</div>;
 }
 
-// Skills are stored as "Category: skill" strings; entries with no category
-// (no colon) fall under "기타". Groups keep first-seen order.
-function groupSkills(skills: string[]): [string, string[]][] {
-  const groups = new Map<string, string[]>();
-  for (const raw of skills) {
-    const sep = raw.indexOf(":");
-    const category = sep === -1 ? "기타" : raw.slice(0, sep).trim();
-    const value = (sep === -1 ? raw : raw.slice(sep + 1)).trim();
-    if (!value) continue;
+// Description fields written through the WYSIWYG editor are stored as
+// sanitized HTML; older entries saved before that editor existed are plain
+// text using the "## heading" / "- bullet" convention parsed above.
+function looksLikeHtml(text: string): boolean {
+  return /<\/?[a-z][\s\S]*>/i.test(text);
+}
+
+function LinkIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  );
+}
+
+function GithubIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+    </svg>
+  );
+}
+
+// Groups skills by category, keeping first-seen category order.
+function groupSkills(skills: ResumeSkill[]): [string, ResumeSkill[]][] {
+  const groups = new Map<string, ResumeSkill[]>();
+  for (const skill of skills) {
+    const category = skill.category || "기타";
     if (!groups.has(category)) groups.set(category, []);
-    groups.get(category)!.push(value);
+    groups.get(category)!.push(skill);
   }
   return Array.from(groups.entries());
 }
@@ -150,9 +195,52 @@ export default async function ResumePage() {
 
         {resume.summary && (
           <section className="mb-12 border-t border-line pt-8">
-            <p className="whitespace-pre-line font-sans leading-relaxed text-ink-soft">
-              {resume.summary}
-            </p>
+            {looksLikeHtml(resume.summary) ? (
+              <div
+                className="rich-content"
+                dangerouslySetInnerHTML={{ __html: resume.summary }}
+              />
+            ) : (
+              <p className="whitespace-pre-line font-sans leading-relaxed text-ink-soft">
+                {resume.summary}
+              </p>
+            )}
+          </section>
+        )}
+
+        {resume.skills.length > 0 && (
+          <section className="mb-12">
+            <h2 className="mb-4 font-serif text-xl text-ink">기술</h2>
+            <dl className="flex flex-col gap-4">
+              {groupSkills(resume.skills).map(([category, items]) => (
+                <div
+                  key={category}
+                  className="flex flex-col gap-1.5 py-1 sm:flex-row sm:gap-6"
+                >
+                  <dt className="shrink-0 font-sans text-sm font-medium text-ink sm:w-40">
+                    {category}
+                  </dt>
+                  <dd className="flex flex-col gap-1">
+                    {SKILL_LEVELS.filter((level) =>
+                      items.some((skill) => skill.level === level),
+                    ).map((level) => (
+                      <p
+                        key={level}
+                        className="font-sans text-sm text-ink-soft"
+                      >
+                        <span className="mr-2 text-xs text-mist">
+                          {SKILL_LEVEL_LABELS[level]}
+                        </span>
+                        {items
+                          .filter((skill) => skill.level === level)
+                          .map((skill) => skill.name)
+                          .join(", ")}
+                      </p>
+                    ))}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </section>
         )}
 
@@ -202,7 +290,15 @@ export default async function ResumePage() {
                       </span>
                     )}
                   </div>
-                  {item.description && renderDescription(item.description)}
+                  {item.description &&
+                    (looksLikeHtml(item.description) ? (
+                      <div
+                        className="rich-content mt-2"
+                        dangerouslySetInnerHTML={{ __html: item.description }}
+                      />
+                    ) : (
+                      renderDescription(item.description)
+                    ))}
                 </li>
               ))}
             </ol>
@@ -210,25 +306,14 @@ export default async function ResumePage() {
         )}
 
         {resume.projects.length > 0 && (
-          <section className="mb-12">
+          <section>
             <h2 className="mb-6 font-serif text-xl text-ink">프로젝트</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {resume.projects.map((item) => (
                 <div key={item.id} className="border border-line p-5">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                     <h3 className="font-sans text-base font-medium text-ink">
-                      {item.link ? (
-                        <a
-                          href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="transition-colors hover:text-accent"
-                        >
-                          {item.title}
-                        </a>
-                      ) : (
-                        item.title
-                      )}
+                      {item.title}
                     </h3>
                     {item.period && (
                       <span className="font-sans text-xs text-mist">
@@ -236,35 +321,48 @@ export default async function ResumePage() {
                       </span>
                     )}
                   </div>
-                  {item.description && (
-                    <p className="mt-2 whitespace-pre-line font-sans text-sm leading-relaxed text-ink-soft">
-                      {item.description}
-                    </p>
+                  {(item.link || item.githubLink) && (
+                    <div className="mt-1.5 flex items-center gap-2">
+                      {item.link && (
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="관련 링크"
+                          title={item.link}
+                          className="text-mist transition-colors hover:text-accent"
+                        >
+                          <LinkIcon className="h-4 w-4" />
+                        </a>
+                      )}
+                      {item.githubLink && (
+                        <a
+                          href={item.githubLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="GitHub 링크"
+                          title={item.githubLink}
+                          className="text-mist transition-colors hover:text-accent"
+                        >
+                          <GithubIcon className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
                   )}
+                  {item.description &&
+                    (looksLikeHtml(item.description) ? (
+                      <div
+                        className="rich-content mt-2"
+                        dangerouslySetInnerHTML={{ __html: item.description }}
+                      />
+                    ) : (
+                      <p className="mt-2 whitespace-pre-line font-sans text-sm leading-relaxed text-ink-soft">
+                        {item.description}
+                      </p>
+                    ))}
                 </div>
               ))}
             </div>
-          </section>
-        )}
-
-        {resume.skills.length > 0 && (
-          <section>
-            <h2 className="mb-4 font-serif text-xl text-ink">기술</h2>
-            <dl className="flex flex-col gap-2">
-              {groupSkills(resume.skills).map(([category, items]) => (
-                <div
-                  key={category}
-                  className="flex flex-col gap-1 py-1 sm:flex-row sm:gap-6"
-                >
-                  <dt className="shrink-0 font-sans text-sm font-medium text-ink sm:w-40">
-                    {category}
-                  </dt>
-                  <dd className="font-sans text-sm text-ink-soft">
-                    {items.join(", ")}
-                  </dd>
-                </div>
-              ))}
-            </dl>
           </section>
         )}
       </div>

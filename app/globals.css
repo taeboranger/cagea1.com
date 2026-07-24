@@ -73,20 +73,20 @@ body {
   pointer-events: none;
   z-index: 0;
   opacity: 0.5;
-  background-image: radial-gradient(
-      rgba(26, 34, 48, 0.05) 0.5px,
-      transparent 0.5px
-    ),
+  background-image:
+    radial-gradient(rgba(26, 34, 48, 0.05) 0.5px, transparent 0.5px),
     radial-gradient(rgba(26, 34, 48, 0.04) 0.5px, transparent 0.5px);
-  background-size: 3px 3px, 7px 7px;
-  background-position: 0 0, 1.5px 3.5px;
+  background-size:
+    3px 3px,
+    7px 7px;
+  background-position:
+    0 0,
+    1.5px 3.5px;
 }
 @media (prefers-color-scheme: dark) {
   .paper-texture::before {
-    background-image: radial-gradient(
-        rgba(255, 255, 255, 0.035) 0.5px,
-        transparent 0.5px
-      ),
+    background-image:
+      radial-gradient(rgba(255, 255, 255, 0.035) 0.5px, transparent 0.5px),
       radial-gradient(rgba(255, 255, 255, 0.03) 0.5px, transparent 0.5px);
   }
 }
@@ -161,3 +161,50 @@ body {
   }
 }
 
+/* Rendered + edited WYSIWYG content (resume summary / description fields) */
+.rich-content {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--color-ink-soft);
+}
+.rich-content > *:first-child {
+  margin-top: 0;
+}
+.rich-content p {
+  margin-top: 0.5rem;
+}
+.rich-content h3 {
+  margin-top: 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.rich-content h4 {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.rich-content ul,
+.rich-content ol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.375rem;
+  padding-left: 1.25rem;
+}
+.rich-content ul {
+  list-style: disc;
+}
+.rich-content ol {
+  list-style: decimal;
+}
+.rich-content strong {
+  font-weight: 600;
+}
+
+.rich-editor .tiptap {
+  min-height: 8rem;
+  outline: none;
+}

@@ -13,10 +13,19 @@ import type {
   ResumeEducation,
   ResumeExperience,
   ResumeProject,
+  ResumeSkill,
+  SkillLevel,
 } from "@/lib/resume";
+import RichTextEditor from "@/components/RichTextEditor";
 
 const initialState: SaveResumeState = {};
 const initialJsonState: SaveResumeJsonState = {};
+
+const SKILL_LEVEL_OPTIONS: { value: SkillLevel; label: string }[] = [
+  { value: "proficient", label: "숙련" },
+  { value: "intermediate", label: "중급" },
+  { value: "basic", label: "기초" },
+];
 
 function emptyExperience(): ResumeExperience {
   return {
@@ -38,7 +47,17 @@ function emptyProject(): ResumeProject {
     title: "",
     period: "",
     link: "",
+    githubLink: "",
     description: "",
+  };
+}
+
+function emptySkill(): ResumeSkill {
+  return {
+    id: crypto.randomUUID(),
+    category: "",
+    name: "",
+    level: "proficient",
   };
 }
 
@@ -64,6 +83,7 @@ export default function ResumeEditorForm({ resume }: { resume: ResumeData }) {
     resume.education,
   );
   const [projects, setProjects] = useState<ResumeProject[]>(resume.projects);
+  const [skills, setSkills] = useState<ResumeSkill[]>(resume.skills);
 
   const modeButtonClass = (active: boolean) =>
     `border px-3 py-1 font-sans text-xs transition-colors ${
@@ -194,16 +214,8 @@ export default function ResumeEditorForm({ resume }: { resume: ResumeData }) {
           </section>
 
           <section className="flex flex-col gap-2">
-            <label htmlFor="summary" className={labelClass}>
-              자기소개
-            </label>
-            <textarea
-              id="summary"
-              name="summary"
-              defaultValue={resume.summary}
-              rows={4}
-              className={`${inputClass} resize-y`}
-            />
+            <label className={labelClass}>자기소개</label>
+            <RichTextEditor name="summary" defaultValue={resume.summary} />
           </section>
 
           <section className="flex flex-col gap-6">
@@ -251,11 +263,9 @@ export default function ResumeEditorForm({ resume }: { resume: ResumeData }) {
                 </div>
                 <div className="flex flex-col gap-2 sm:col-span-2">
                   <label className={labelClass}>설명</label>
-                  <textarea
+                  <RichTextEditor
                     name={`experience.${index}.description`}
                     defaultValue={item.description}
-                    rows={3}
-                    className={`${inputClass} resize-y`}
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -306,8 +316,8 @@ export default function ResumeEditorForm({ resume }: { resume: ResumeData }) {
                     className={inputClass}
                   />
                 </div>
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className={labelClass}>링크 (선택)</label>
+                <div className="flex flex-col gap-2">
+                  <label className={labelClass}>일반 링크 (선택)</label>
                   <input
                     name={`projects.${index}.link`}
                     defaultValue={item.link}
@@ -315,13 +325,20 @@ export default function ResumeEditorForm({ resume }: { resume: ResumeData }) {
                     className={inputClass}
                   />
                 </div>
+                <div className="flex flex-col gap-2">
+                  <label className={labelClass}>GitHub 링크 (선택)</label>
+                  <input
+                    name={`projects.${index}.githubLink`}
+                    defaultValue={item.githubLink}
+                    placeholder="https://github.com/..."
+                    className={inputClass}
+                  />
+                </div>
                 <div className="flex flex-col gap-2 sm:col-span-2">
                   <label className={labelClass}>설명</label>
-                  <textarea
+                  <RichTextEditor
                     name={`projects.${index}.description`}
                     defaultValue={item.description}
-                    rows={3}
-                    className={`${inputClass} resize-y`}
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -395,17 +412,67 @@ export default function ResumeEditorForm({ resume }: { resume: ResumeData }) {
             ))}
           </section>
 
-          <section className="flex flex-col gap-2">
-            <label htmlFor="skills" className={labelClass}>
-              기술 (쉼표로 구분)
-            </label>
-            <input
-              id="skills"
-              name="skills"
-              defaultValue={resume.skills.join(", ")}
-              placeholder="TypeScript, React, Next.js"
-              className={inputClass}
-            />
+          <section className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-lg text-ink">기술</h2>
+              <button
+                type="button"
+                onClick={() => setSkills([...skills, emptySkill()])}
+                className="border border-line px-3 py-1 text-xs text-ink-soft transition-colors hover:border-accent hover:text-accent"
+              >
+                + 항목 추가
+              </button>
+            </div>
+            {skills.map((item, index) => (
+              <div
+                key={item.id}
+                className="grid grid-cols-1 gap-4 border border-line p-5 sm:grid-cols-3"
+              >
+                <div className="flex flex-col gap-2">
+                  <label className={labelClass}>분류</label>
+                  <input
+                    name={`skills.${index}.category`}
+                    defaultValue={item.category}
+                    placeholder="Language"
+                    className={inputClass}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className={labelClass}>기술명</label>
+                  <input
+                    name={`skills.${index}.name`}
+                    defaultValue={item.name}
+                    placeholder="TypeScript"
+                    className={inputClass}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className={labelClass}>숙련도</label>
+                  <select
+                    name={`skills.${index}.level`}
+                    defaultValue={item.level}
+                    className={inputClass}
+                  >
+                    {SKILL_LEVEL_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="sm:col-span-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSkills(skills.filter((_, i) => i !== index))
+                    }
+                    className="text-xs text-mist transition-colors hover:text-accent"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            ))}
           </section>
 
           {state?.error && (
