@@ -1,80 +1,81 @@
-name: Build and promote container image
+name: PROD
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  packages: write
-
 concurrency:
-  group: production-promotion
+  group: cagea1-production
   cancel-in-progress: false
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/cagea1.com
-  CONFIG_REPOSITORY: ${{ vars.CONFIG_REPOSITORY }}
-  CONFIG_PATH: overlays/prod/cagea1/kustomization.yaml
+  dockerimage_tag: ${{ github.sha }}
+  dockerimage_name: lightstone1/cagea1.com-prod
 
 jobs:
-  build-and-promote:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - name: Check out application
+      - name: Code repo checkout
         uses: actions/checkout@v4
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5.5.1
+        with:
+          images: ${{ env.dockerimage_name }}
+          tags: |
+            ${{ env.dockerimage_tag }}
+            latest
+          flavor: latest=true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
           push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.IMAGE_NAME }}:main
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
 
-      - name: Verify config repository setting
-        run: test -n "$CONFIG_REPOSITORY"
-
-      - name: Generate GitHub App token for config repository
-        id: config-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.CONFIG_REPO_APP_ID }}
-          private-key: ${{ secrets.CONFIG_REPO_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ env.CONFIG_REPOSITORY }}
-
-      - name: Check out config repository
+      - name: Config repo checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/${{ env.CONFIG_REPOSITORY }}
-          token: ${{ steps.config-token.outputs.token }}
-          path: config
+          repository: taeboranger/cagea1.com-config
+          ref: main
+          token: ${{ secrets.ACTION_TOKEN }}
+          path: cagea1-config
 
-      - name: Promote immutable image tag
-        working-directory: config
-        env:
-          IMAGE: ${{ env.IMAGE_NAME }}
-          TAG: ${{ github.sha }}
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2.0.0
+
+      - name: Update Kustomize image tag
+        working-directory: cagea1-config/overlays/prod/cagea1
         run: |
-          test -n "$CONFIG_REPOSITORY"
-          sed -i -E "s#(^[[:space:]]*newTag:[[:space:]]*).*$#\\1${TAG}#" "$CONFIG_PATH"
-          git config user.name "github-actions[bot]"
+          kustomize edit set image ${{ env.dockerimage_name }}:${{ env.dockerimage_tag }}
+          cat kustomization.yaml
+
+      - name: Push config repository update
+        working-directory: cagea1-config
+        run: |
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$CONFIG_PATH"
-          git diff --cached --quiet || git commit -m "deploy(cagea1.com): ${TAG}"
-          git push
+          git config user.name "github-actions[bot]"
+          git add overlays/prod/cagea1/kustomization.yaml
+          git diff --cached --quiet || git commit -m "deploy(cagea1.com): ${{ github.sha }}"
+          git push origin main
