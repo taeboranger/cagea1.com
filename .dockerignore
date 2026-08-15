@@ -1,0 +1,10 @@
+.git
+.github
+.next
+node_modules
+.env*
+!.env.example
+data/
+public/uploads/
+README.md
+ecosystem.config.js
