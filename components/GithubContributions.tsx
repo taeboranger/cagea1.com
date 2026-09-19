@@ -38,7 +38,7 @@ export default function GithubContributions({
 }) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-  const currentMonth = new Date(data.weeks[0]?.[0]?.date ?? Date.now()).getUTCMonth();
+  const currentMonth = new Date(data.weeks[0]?.[0]?.date ?? "1970-01-01").getUTCMonth();
   const monthDays = data.weeks
     .flat()
     .filter((day) => new Date(day.date).getUTCMonth() === currentMonth);

@@ -28,6 +28,12 @@ export default async function SiteHeader() {
             갤러리
           </Link>
           <Link
+            href="/roadtrip"
+            className="whitespace-nowrap transition-colors hover:text-accent"
+          >
+            여행 기록
+          </Link>
+          <Link
             href="/notes"
             className="whitespace-nowrap transition-colors hover:text-accent"
           >

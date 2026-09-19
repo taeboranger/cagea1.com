@@ -9,6 +9,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 RUN npm run build
 
 FROM base AS runner

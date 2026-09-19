@@ -44,3 +44,8 @@ next-env.d.ts
 # app data (personal info & uploaded photos, not for version control)
 /data/*.json
 /public/uploads
+
+# Browser test output
+/test-results/
+/playwright-report/
+/data/*.tmp
