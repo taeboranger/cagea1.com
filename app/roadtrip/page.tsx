@@ -22,7 +22,7 @@ export default async function RoadtripPage() {
       </Link>
     </div>
     <p className="mb-6 border-b border-line pb-4 text-xs tracking-wide text-mist">{trips.length}개의 여행 이야기</p>
-    {trips.length ? <TripCards trips={trips} /> : <div className="border border-dashed border-line px-6 py-20 text-center">
+    {trips.length ? <TripCards trips={trips} authed={authed} /> : <div className="border border-dashed border-line px-6 py-20 text-center">
       <h2 className="font-serif text-xl text-ink">첫 여행의 이야기를 남겨보세요</h2>
       <p className="mt-4 text-sm leading-7 text-ink-soft">여행을 만들고 사진을 더하면, 그 여행만의 지도가 펼쳐집니다.</p>
     </div>}

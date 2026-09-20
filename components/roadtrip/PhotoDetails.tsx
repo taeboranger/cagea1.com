@@ -1,14 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isCoordinates, type Coordinates, type RoadtripPhoto } from "@/lib/roadtrip-types";
 
-export default function PhotoDetails({ photo, authed, draft, picking, onPickMode, onDraft, onSaved, onDeleted }: {
-  photo: RoadtripPhoto; authed: boolean; draft: Coordinates | null; picking: boolean;
+export default function PhotoDetails({ photo, authed, memoFocusRequest, draft, picking, onPickMode, onDraft, onSaved, onDeleted }: {
+  photo: RoadtripPhoto; authed: boolean; memoFocusRequest: number; draft: Coordinates | null; picking: boolean;
   onPickMode: (value: boolean) => void; onDraft: (value: Coordinates | null) => void;
   onSaved: (photo: RoadtripPhoto) => void; onDeleted: (id: string) => void;
 }) {
+  const memoInput = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { if (memoFocusRequest) memoInput.current?.focus({ preventScroll: true }); }, [memoFocusRequest]);
   const [memo, setMemo] = useState(photo.memo);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -49,7 +51,7 @@ export default function PhotoDetails({ photo, authed, draft, picking, onPickMode
         <fieldset disabled={pending} className="space-y-4 disabled:opacity-60">
           <div>
             <label htmlFor="photo-memo" className="text-xs text-ink-soft">이 순간의 메모</label>
-            <textarea id="photo-memo" value={memo} onChange={(event) => setMemo(event.target.value)} maxLength={2000} rows={4} placeholder="기억하고 싶은 이야기를 남겨주세요."
+            <textarea ref={memoInput} id="photo-memo" value={memo} onChange={(event) => setMemo(event.target.value)} maxLength={2000} rows={4} placeholder="기억하고 싶은 이야기를 남겨주세요."
               className="mt-2 w-full resize-y border border-line bg-transparent p-3 text-sm leading-6 outline-none focus:border-accent" />
           </div>
           <div>

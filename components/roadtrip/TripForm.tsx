@@ -12,19 +12,18 @@ export default function TripForm({ trip, onCancel, onSaved }: {
   const [memo, setMemo] = useState(trip?.memo ?? "");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  async function submit(remove = false) {
+
+  async function submit() {
     setPending(true); setError("");
     try {
       const response = await fetch("/api/roadtrip/trips" + (trip ? "/" + trip.id : ""), {
-        method: remove ? "DELETE" : trip ? "PATCH" : "POST",
+        method: trip ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: remove ? undefined : JSON.stringify({ title, memo }),
+        body: JSON.stringify({ title, memo }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
-      if (remove) router.push("/roadtrip");
-      else if (!trip) router.push("/roadtrip/" + result.id);
+      if (!trip) router.push("/roadtrip/" + result.id);
       else onSaved?.();
       router.refresh();
     } catch (error) {
@@ -45,14 +44,6 @@ export default function TripForm({ trip, onCancel, onSaved }: {
         <button type="submit" className="border border-ink bg-ink px-6 py-3 text-sm text-paper hover:opacity-85">{pending ? "저장 중…" : trip ? "여행 정보 저장" : "여행 만들기"}</button>
         <button type="button" onClick={() => onCancel ? onCancel() : router.push("/roadtrip")} className="text-sm text-ink-soft hover:text-accent">취소</button>
       </div>
-      {trip && <div className="border-t border-line pt-4">
-        {!confirmDelete ? <button type="button" onClick={() => setConfirmDelete(true)} className="text-xs text-mist hover:text-accent">여행 삭제</button>
-          : <div className="space-y-3 text-sm leading-7">
-            <p className="text-ink-soft">이 여행과 포함된 모든 사진·메모를 삭제할까요? 삭제 후에는 되돌릴 수 없습니다.</p>
-            <button type="button" onClick={() => void submit(true)} className="mr-5 text-accent">여행과 사진 모두 삭제</button>
-            <button type="button" onClick={() => setConfirmDelete(false)} className="text-ink-soft">삭제 취소</button>
-          </div>}
-      </div>}
     </fieldset>
     {error && <p role="alert" className="text-sm text-accent">{error}</p>}
   </form>;

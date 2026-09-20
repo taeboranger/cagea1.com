@@ -69,7 +69,7 @@ export default async function Home() {
             <Link href="/roadtrip" className="hover:text-accent">전체 {trips.length}개 보기 ↗</Link>
           </div>
         </div>
-        {trips.length ? <TripCards trips={trips.slice(0, 6)} /> : <p className="py-8 text-sm text-mist">아직 남겨둔 여행 이야기가 없습니다.</p>}
+        {trips.length ? <TripCards trips={trips.slice(0, 6)} authed={authed} /> : <p className="py-8 text-sm text-mist">아직 남겨둔 여행 이야기가 없습니다.</p>}
       </section>
 
       {previewPhotos.length > 0 && (

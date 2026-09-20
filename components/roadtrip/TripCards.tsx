@@ -1,10 +1,11 @@
 import Image from "next/image";
+import DeleteTripButton from "./DeleteTripButton";
 import Link from "next/link";
 import type { RoadtripSummary } from "@/lib/roadtrip-types";
 
-export default function TripCards({ trips }: { trips: RoadtripSummary[] }) {
+export default function TripCards({ trips, authed = false }: { trips: RoadtripSummary[]; authed?: boolean }) {
   return <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-    {trips.map((trip) => <Link key={trip.id} href={"/roadtrip/" + trip.id} className="group min-w-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+    {trips.map((trip) => <article key={trip.id} className="min-w-0"><Link href={"/roadtrip/" + trip.id} className="group block min-w-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
       <div className="relative aspect-[4/3] overflow-hidden border border-line bg-paper-raised">
         {trip.cover ? <Image src={trip.cover.url} alt={trip.title + " 대표 사진"} fill sizes="(min-width: 1024px) 320px, (min-width: 640px) 45vw, 90vw" className="object-cover transition-transform duration-300 group-hover:scale-105" />
           : <div className="flex h-full flex-col items-center justify-center gap-4 text-mist">
@@ -22,6 +23,6 @@ export default function TripCards({ trips }: { trips: RoadtripSummary[] }) {
       </div>
       {trip.memo && <p className="mt-2 line-clamp-2 break-words text-sm leading-7 text-ink-soft">{trip.memo}</p>}
       <p className="mt-3 text-xs tracking-wider text-mist">{new Date(trip.createdAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</p>
-    </Link>)}
+    </Link>{authed && <div className="mt-4"><DeleteTripButton id={trip.id} title={trip.title} photoCount={trip.photoCount} /></div>}</article>)}
   </div>;
 }

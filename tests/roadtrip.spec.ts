@@ -218,3 +218,92 @@ test("multiple trips appear on the homepage and keep their photos separate", asy
   await expect(page.getByRole("heading", { name: "제주의 여름, 다시" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "부산의 가을" })).toHaveCount(0);
 });
+test("repeated selections upload concurrently, retry failures, edit memos and delete trips directly", async ({ page, context, request }, testInfo) => {
+  const trip = await createTrip(request, "동시 업로드 여행");
+  await context.addCookies([{ name: "cagea1_session", value: sessionToken(), url: origin }]);
+  await page.goto("/roadtrip/" + trip.id);
+  await page.getByRole("button", { name: "+ 사진 추가", exact: true }).click();
+  const buffer = await sharp({ create: { width: 400, height: 300, channels: 3, background: "#a3bbbd" } }).png().toBuffer();
+  const fixture = (name: string) => ({ name, mimeType: "image/png", buffer });
+  await page.getByLabel("여행 사진 선택").setInputFiles([fixture("a.png"), fixture("b.png")]);
+  await page.getByLabel("여행 사진 선택").setInputFiles([fixture("retry.png"), fixture("c.png")]);
+  const queue = page.getByRole("list", { name: "선택한 사진" });
+  await expect(queue.getByRole("listitem")).toHaveCount(4);
+  await page.getByRole("button", { name: "b.png 선택 취소" }).click();
+  await expect(queue.getByRole("listitem")).toHaveCount(3);
+  await page.getByLabel("여행 사진 선택").setInputFiles(fixture("b.png"));
+  await expect(queue.getByRole("listitem")).toHaveCount(4);
+
+  let active = 0, peak = 0, started = 0, failedOnce = false, gateTimedOut = false;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const timeout = setTimeout(() => { gateTimedOut = true; release(); }, 8000);
+  const uploaded: RoadtripPhoto[] = [];
+  await page.route("**/api/roadtrip", async (route) => {
+    active++; started++; peak = Math.max(peak, active);
+    if (started === 3) { clearTimeout(timeout); release(); }
+    try {
+      await gate;
+      if (!failedOnce && route.request().postDataBuffer()!.includes(Buffer.from("retry.png"))) {
+        failedOnce = true;
+        await route.fulfill({ status: 503, json: { error: "일시적인 업로드 실패" } });
+      } else {
+        const response = await route.fetch();
+        uploaded.push(await response.json());
+        await route.fulfill({ response });
+      }
+    } finally { active--; }
+  });
+  await page.getByRole("button", { name: "사진 저장", exact: true }).click();
+  await expect(page.getByRole("region", { name: "사진 업로드" }).getByRole("alert")).toContainText("retry.png");
+  expect(gateTimedOut).toBe(false);
+  expect(peak).toBe(3);
+  await expect(queue.getByRole("listitem")).toHaveCount(1);
+  await expect(queue).toContainText("retry.png");
+  await expect(page.getByRole("status").filter({ hasText: "3장의 사진을 저장했습니다." })).toBeVisible();
+  await page.getByRole("button", { name: "실패한 사진 다시 저장" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "1장의 사진을 저장했습니다." })).toBeVisible();
+  expect(uploaded).toHaveLength(4);
+  expect(new Set(uploaded.map((photo) => photo.id)).size).toBe(4);
+  await page.unroute("**/api/roadtrip");
+  await page.getByRole("button", { name: "+ 사진 추가", exact: true }).click();
+  await page.getByLabel("여행 사진 선택").setInputFiles(fixture("later.png"));
+  await page.getByRole("button", { name: "사진 저장", exact: true }).click();
+  await expect(page.getByRole("region", { name: "여행 사진 목록" }).getByRole("button", { name: "later.png 메모 수정" })).toBeVisible();
+
+  await page.getByRole("button", { name: "a.png 메모 수정", exact: true }).click();
+  await expect(page.getByLabel("이 순간의 메모")).toBeFocused();
+  await page.getByLabel("이 순간의 메모").fill("업로드 후 바꾼 메모");
+  await page.getByRole("button", { name: "변경사항 저장" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "사진의 메모와 위치를 저장했습니다." })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "a.png 메모 수정", exact: true }).click();
+  await expect(page.getByLabel("이 순간의 메모")).toHaveValue("업로드 후 바꾼 메모");
+  await page.getByRole("button", { name: "b.png 메모 수정", exact: true }).click();
+  await expect(page.getByLabel("이 순간의 메모")).toHaveValue("");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "여행 삭제", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "여행 삭제 확인" });
+  await expect(dialog).toContainText("사진 5장");
+  await expect(dialog.getByRole("button", { name: "삭제 취소" })).toBeFocused();
+  await dialog.screenshot({ path: testInfo.outputPath("trip-delete-mobile.png") });
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  expect((await request.get("/roadtrip/" + trip.id)).status()).toBe(200);
+  await page.getByRole("button", { name: "여행 삭제", exact: true }).click();
+  await page.route("**/api/roadtrip/trips/" + trip.id, (route) => route.fulfill({ status: 500, json: { error: "삭제 재시도 테스트" } }), { times: 1 });
+  await dialog.getByRole("button", { name: "여행과 사진 모두 삭제" }).click();
+  await expect(dialog.getByRole("alert")).toHaveText("삭제 재시도 테스트");
+  await dialog.getByRole("button", { name: "여행과 사진 모두 삭제" }).click();
+  await expect(page).toHaveURL("/roadtrip");
+  createdTrips.splice(createdTrips.indexOf(trip.id), 1);
+  for (const photo of uploaded) expect((await request.get(photo.url)).status()).toBe(404);
+
+  const emptyTrip = await createTrip(request, "목록에서 삭제할 여행");
+  await page.reload();
+  const card = page.locator("article").filter({ hasText: emptyTrip.title });
+  await card.getByRole("button", { name: "여행 삭제" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "여행과 사진 모두 삭제" }).click();
+  await expect(card).toHaveCount(0);
+  createdTrips.splice(createdTrips.indexOf(emptyTrip.id), 1);
+});

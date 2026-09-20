@@ -42,8 +42,9 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 - Create any number of trips at `/roadtrip/new`, each with its own title and memo. `/roadtrip` lists all trips, while `/roadtrip/[tripId]` shows only that trip's photos and map.
 - The homepage shows up to six recent trips with cover photos and links to the full list. Editing or deleting a trip updates both the homepage and the list.
 - Existing photo-only data is read as a single "기존 여행 기록" trip without changing image URLs, coordinates, or memos. The next write atomically saves the versioned trip-and-photo structure in the existing JSON file.
-- Upload multiple JPG, PNG, or WebP photos. The browser reads GPS and capture time before resizing; the server validates and converts the image to WebP, at most 1920 pixels on its longest side.
-- Select a photo on the map or in the list to view its memo. Administrators can edit the memo and coordinates, pick a location on the map, or delete the photo.
+- Upload multiple JPG, PNG, or WebP photos, accumulating selections across file-picker visits or drops and removing individual queued files. Up to three photos are processed concurrently, with progress and retry of only failed files. The browser reads GPS and capture time before resizing; the server validates and converts the image to WebP, at most 1920 pixels on its longest side.
+- Administrators can delete a trip directly from its detail page or its card on the homepage and trip list. A confirmation dialog states that the trip, its photos, and memos are permanently removed; cancellation preserves everything.
+- Select a photo on the map or in the list to view its memo. Each photo also has a dedicated memo-edit button that focuses the editor. Administrators can edit the memo and coordinates, pick a location on the map, or delete the photo.
 - Photos without GPS remain in the list and can be located manually. Photos, memos, and coordinates are publicly visible, just like the gallery.
 - The app stores metadata in `data/roadtrip.json` and images in `public/uploads/roadtrip/`. Keep both existing persistent mounts when deploying. File-backed writes are serialized within one Node process; run one app instance against these files.
 
