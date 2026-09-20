@@ -1,5 +1,6 @@
 export interface Coordinates { lat: number; lng: number }
 export interface RoadtripPhoto {
+  tripId: string;
   id: string;
   url: string;
   width: number;
@@ -15,4 +16,15 @@ export function isCoordinates(value: unknown): value is Coordinates {
   const { lat, lng } = value as Coordinates;
   return typeof lat === "number" && Number.isFinite(lat) && Math.abs(lat) <= 90 &&
     typeof lng === "number" && Number.isFinite(lng) && Math.abs(lng) <= 180;
+}
+export interface Roadtrip {
+  id: string;
+  title: string;
+  memo: string;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface RoadtripSummary extends Roadtrip {
+  photoCount: number;
+  cover: RoadtripPhoto | null;
 }

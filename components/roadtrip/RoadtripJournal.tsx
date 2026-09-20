@@ -5,14 +5,16 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { prepareRoadtripPhoto } from "@/lib/prepareRoadtripPhoto";
-import type { Coordinates, RoadtripPhoto } from "@/lib/roadtrip-types";
+import type { Coordinates, RoadtripPhoto, Roadtrip } from "@/lib/roadtrip-types";
 import PhotoDetails from "./PhotoDetails";
+import TripForm from "./TripForm";
 
 const RoadtripMap = dynamic(() => import("./RoadtripMap"), {
   ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-mist">여행 지도를 펼치는 중…</div>,
 });
 const buttonClass = "border border-line px-4 py-2.5 text-sm text-ink-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50";
-export default function RoadtripJournal({ initialPhotos, authed, apiKey }: { initialPhotos: RoadtripPhoto[]; authed: boolean; apiKey: string }) {
+export default function RoadtripJournal({ trip, initialPhotos, authed, apiKey }: { trip: Roadtrip; initialPhotos: RoadtripPhoto[]; authed: boolean; apiKey: string }) {
+  const [editingTrip, setEditingTrip] = useState(false);
   const [photos, setPhotos] = useState(initialPhotos);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
@@ -49,7 +51,7 @@ export default function RoadtripJournal({ initialPhotos, authed, apiKey }: { ini
         const prepared = await prepareRoadtripPhoto(original);
         const form = new FormData();
         form.append("photo", prepared.file);
-        form.append("details", JSON.stringify({ location: prepared.location, takenAt: prepared.takenAt, memo: uploadMemo, originalName: original.name }));
+        form.append("details", JSON.stringify({ tripId: trip.id, location: prepared.location, takenAt: prepared.takenAt, memo: uploadMemo, originalName: original.name }));
         const response = await fetch("/api/roadtrip", { method: "POST", body: form });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error);
@@ -71,16 +73,18 @@ export default function RoadtripJournal({ initialPhotos, authed, apiKey }: { ini
   }
 
   return <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-12 sm:px-10 sm:py-16">
+    <Link href="/roadtrip" className="mb-8 inline-block text-xs text-mist hover:text-accent">← 모든 여행 기록</Link>
     <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
       <div>
         <p className="mb-3 text-[10px] tracking-[0.3em] text-mist">ROADTRIP</p>
-        <h1 className="font-serif text-3xl text-ink">여행 기록</h1>
-        <p className="mt-4 text-sm leading-7 text-ink-soft">지나온 곳, 머무른 순간.<br className="sm:hidden" /> 사진과 짧은 이야기로 남기는 나의 여행.</p>
+        <h1 className="break-words font-serif text-3xl text-ink">{trip.title}</h1>
+        <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-ink-soft">{trip.memo || "이 여행에서 만난 풍경과 작은 이야기들."}</p>
       </div>
-      {authed ? <button type="button" disabled={busy} onClick={() => setShowUpload(!showUpload)} className={buttonClass}>{showUpload ? "업로드 닫기" : "+ 사진 추가"}</button>
-        : <Link href="/login?from=%2Froadtrip" className="text-xs text-mist transition-colors hover:text-accent">로그인하고 기록하기 ↗</Link>}
+      {authed ? <div className="flex flex-wrap gap-3"><button type="button" disabled={busy} onClick={() => setEditingTrip(!editingTrip)} className={buttonClass}>여행 정보 수정</button><button type="button" disabled={busy} onClick={() => setShowUpload(!showUpload)} className={buttonClass}>{showUpload ? "업로드 닫기" : "+ 사진 추가"}</button></div>
+        : <Link href={"/login?from=" + encodeURIComponent("/roadtrip/" + trip.id)} className="text-xs text-mist transition-colors hover:text-accent">로그인하고 기록하기 ↗</Link>}
     </div>
 
+    {editingTrip && authed && <section aria-label="여행 정보 수정" className="mb-8 border border-line bg-paper-raised p-6"><TripForm trip={trip} onCancel={() => setEditingTrip(false)} onSaved={() => setEditingTrip(false)} /></section>}
     {showUpload && authed && <section className="mb-8 border border-line bg-paper-raised p-5 sm:p-7" aria-label="사진 업로드">
       <form onSubmit={(event) => { event.preventDefault(); void upload(); }} className="space-y-5">
         <fieldset disabled={busy} className="space-y-5 disabled:opacity-60">

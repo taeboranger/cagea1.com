@@ -11,7 +11,8 @@ async function mutate(request: Request, params: Promise<{ id: string }>, remove:
   try {
     const result = remove ? await deleteRoadtripPhoto(id) : await updateRoadtripPhoto(id, await request.json());
     if (!result) return Response.json({ error: "사진을 찾을 수 없습니다." }, { status: 404 });
-    revalidatePath("/roadtrip");
+    revalidatePath("/roadtrip", "layout");
+    revalidatePath("/");
     return Response.json(remove ? { ok: true } : result);
   } catch (error) {
     if (error instanceof RoadtripValidationError || error instanceof SyntaxError)

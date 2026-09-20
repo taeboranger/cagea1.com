@@ -13,7 +13,8 @@ export async function POST(request: Request) {
     const file = data.get("photo");
     if (!(file instanceof File)) throw new RoadtripValidationError("사진을 선택해주세요.");
     const photo = await addRoadtripPhoto(file, JSON.parse(String(data.get("details"))));
-    revalidatePath("/roadtrip");
+    revalidatePath("/roadtrip", "layout");
+    revalidatePath("/");
     return Response.json(photo, { status: 201 });
   } catch (error) {
     if (error instanceof RoadtripValidationError || error instanceof SyntaxError || error instanceof TypeError)

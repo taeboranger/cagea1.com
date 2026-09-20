@@ -39,6 +39,9 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 `/roadtrip` reuses the site's typography, colors, paper texture, and administrator login.
 
+- Create any number of trips at `/roadtrip/new`, each with its own title and memo. `/roadtrip` lists all trips, while `/roadtrip/[tripId]` shows only that trip's photos and map.
+- The homepage shows up to six recent trips with cover photos and links to the full list. Editing or deleting a trip updates both the homepage and the list.
+- Existing photo-only data is read as a single "기존 여행 기록" trip without changing image URLs, coordinates, or memos. The next write atomically saves the versioned trip-and-photo structure in the existing JSON file.
 - Upload multiple JPG, PNG, or WebP photos. The browser reads GPS and capture time before resizing; the server validates and converts the image to WebP, at most 1920 pixels on its longest side.
 - Select a photo on the map or in the list to view its memo. Administrators can edit the memo and coordinates, pick a location on the map, or delete the photo.
 - Photos without GPS remain in the list and can be located manually. Photos, memos, and coordinates are publicly visible, just like the gallery.

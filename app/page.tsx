@@ -5,13 +5,16 @@ import { getResume } from "@/lib/resume";
 import { getPhotos } from "@/lib/gallery";
 import { getMonthlyContributions } from "@/lib/github";
 import GithubContributions from "@/components/GithubContributions";
+import { getRoadtrips } from "@/lib/roadtrip";
+import TripCards from "@/components/roadtrip/TripCards";
 
 export default async function Home() {
-  const [resume, photos, contributions, authed] = await Promise.all([
+  const [resume, photos, contributions, authed, trips] = await Promise.all([
     getResume(),
     getPhotos(),
     getMonthlyContributions(),
     isAuthenticated(),
+    getRoadtrips(),
   ]);
   const previewPhotos = photos.slice(0, 8);
   const showResumeLink = resume.isPublic || authed;
@@ -48,7 +51,25 @@ export default async function Home() {
           >
             갤러리 보기
           </Link>
+          <Link href="/roadtrip" className="border border-line px-8 py-3 font-sans text-sm tracking-wide text-ink-soft transition-colors hover:border-accent hover:text-accent">
+            여행 기록 보기
+          </Link>
         </div>
+      </section>
+
+      <section aria-label="여행 기록" className="mx-auto w-full max-w-5xl border-t border-line px-6 py-16 sm:px-10">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="mb-3 text-[10px] tracking-[0.3em] text-mist">ROADTRIPS</p>
+            <h2 className="font-serif text-2xl text-ink">여행 기록</h2>
+            <p className="mt-3 text-sm text-ink-soft">여행마다 다른 풍경, 하나씩 쌓이는 이야기.</p>
+          </div>
+          <div className="flex gap-4 text-sm text-ink-soft">
+            {authed && <Link href="/roadtrip/new" className="hover:text-accent">+ 새 여행</Link>}
+            <Link href="/roadtrip" className="hover:text-accent">전체 {trips.length}개 보기 ↗</Link>
+          </div>
+        </div>
+        {trips.length ? <TripCards trips={trips.slice(0, 6)} /> : <p className="py-8 text-sm text-mist">아직 남겨둔 여행 이야기가 없습니다.</p>}
       </section>
 
       {previewPhotos.length > 0 && (
