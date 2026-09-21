@@ -31,7 +31,7 @@ export default function DeleteTripButton({ id, title, photoCount, disabled = fal
     <dialog ref={dialog} aria-label="여행 삭제 확인" onCancel={(event) => { if (pending) event.preventDefault(); }}
       className="fixed inset-0 m-auto w-[calc(100%-3rem)] max-w-md border border-line bg-paper-raised p-6 text-ink backdrop:bg-black/40">
       <h2 className="font-serif text-xl">여행을 삭제할까요?</h2>
-      <p className="mt-4 break-words text-sm leading-7 text-ink-soft">‘{title}’ 여행과 사진 {photoCount}장, 모든 메모가 삭제됩니다. 삭제 후에는 되돌릴 수 없습니다.</p>
+      <p className="mt-4 break-words text-sm leading-7 text-ink-soft">‘{title}’과 사진 {photoCount}장, 메모가 영구 삭제됩니다.</p>
       <div className="mt-6 flex flex-wrap gap-4">
         <button type="button" disabled={pending} onClick={() => dialog.current?.close()} autoFocus className="border border-line px-4 py-2 text-sm disabled:opacity-50">삭제 취소</button>
         <button type="button" disabled={pending} onClick={() => void remove()} className="border border-accent bg-accent px-4 py-2 text-sm text-paper disabled:opacity-50">{pending ? "삭제 중…" : "여행과 사진 모두 삭제"}</button>

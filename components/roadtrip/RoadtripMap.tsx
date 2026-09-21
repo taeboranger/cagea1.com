@@ -29,7 +29,7 @@ interface Props {
   onPick: (location: Coordinates) => void;
 }
 export default function RoadtripMap(props: Props) {
-  if (!props.apiKey) return <MapMessage>지도를 불러오기 위한 설정이 필요합니다. 사진과 메모는 계속 이용할 수 있습니다.</MapMessage>;
+  if (!props.apiKey) return <MapMessage>지도 설정이 필요합니다.</MapMessage>;
   return <LoadedMap {...props} />;
 }
 function MapMessage({ children }: { children: React.ReactNode }) {
@@ -66,8 +66,8 @@ function LoadedMap({ apiKey, photos, selectedId, onSelect, picking, draft, onPic
   useEffect(() => {
     if (selected?.location && map) map.panTo(selected.location);
   }, [map, selected]);
-  if (loadError || authError) return <MapMessage>지도를 불러오지 못했습니다. 네트워크 또는 Google Maps 키의 허용 도메인을 확인해주세요. 사진과 메모는 아래에서 볼 수 있습니다.</MapMessage>;
-  if (!isLoaded) return <MapMessage>여행 지도를 펼치는 중…</MapMessage>;
+  if (loadError || authError) return <MapMessage>지도를 불러오지 못했습니다.</MapMessage>;
+  if (!isLoaded) return <MapMessage>지도 로딩 중…</MapMessage>;
 
   return <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={7} options={{ ...options, draggableCursor: picking ? "crosshair" : undefined }}
     onLoad={setMap} onUnmount={() => setMap(null)}

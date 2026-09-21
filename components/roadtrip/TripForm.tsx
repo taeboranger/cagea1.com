@@ -33,11 +33,11 @@ export default function TripForm({ trip, onCancel, onSaved }: {
   return <form onSubmit={(event) => { event.preventDefault(); void submit(); }} className="space-y-6">
     <fieldset disabled={pending} className="space-y-6 disabled:opacity-60">
       <label className="block text-xs text-ink-soft">여행 제목
-        <input value={title} onChange={(event) => setTitle(event.target.value)} required maxLength={100} placeholder="예: 제주에서 보낸 여름"
+        <input value={title} onChange={(event) => setTitle(event.target.value)} required maxLength={100}
           className="mt-2 w-full border-b border-line bg-transparent py-3 font-serif text-lg text-ink outline-none focus:border-accent" />
       </label>
       <label className="block text-xs text-ink-soft">여행 메모 <span className="text-mist">(선택)</span>
-        <textarea value={memo} onChange={(event) => setMemo(event.target.value)} maxLength={2000} rows={4} placeholder="어디로, 누구와 떠난 여행인가요?"
+        <textarea value={memo} onChange={(event) => setMemo(event.target.value)} maxLength={2000} rows={4}
           className="mt-2 w-full resize-y border border-line bg-transparent p-3 text-sm leading-7 text-ink outline-none focus:border-accent" />
       </label>
       <div className="flex flex-wrap items-center gap-4">

@@ -22,9 +22,7 @@ export default async function Home() {
   return (
     <div className="flex flex-1 flex-col">
       <section className="flex min-h-[70vh] flex-col items-center justify-center px-6 py-24 text-center sm:px-10">
-        <p className="font-sans text-xs tracking-[0.3em] text-mist">WELCOME</p>
-
-        <h1 className="mt-6 font-serif text-4xl text-ink sm:text-5xl">
+        <h1 className="font-serif text-4xl text-ink sm:text-5xl">
           CageA
         </h1>
 
@@ -60,16 +58,14 @@ export default async function Home() {
       <section aria-label="여행 기록" className="mx-auto w-full max-w-5xl border-t border-line px-6 py-16 sm:px-10">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="mb-3 text-[10px] tracking-[0.3em] text-mist">ROADTRIPS</p>
             <h2 className="font-serif text-2xl text-ink">여행 기록</h2>
-            <p className="mt-3 text-sm text-ink-soft">여행마다 다른 풍경, 하나씩 쌓이는 이야기.</p>
           </div>
           <div className="flex gap-4 text-sm text-ink-soft">
             {authed && <Link href="/roadtrip/new" className="hover:text-accent">+ 새 여행</Link>}
             <Link href="/roadtrip" className="hover:text-accent">전체 {trips.length}개 보기 ↗</Link>
           </div>
         </div>
-        {trips.length ? <TripCards trips={trips.slice(0, 6)} authed={authed} /> : <p className="py-8 text-sm text-mist">아직 남겨둔 여행 이야기가 없습니다.</p>}
+        {trips.length ? <TripCards trips={trips.slice(0, 6)} authed={authed} /> : <p className="py-8 text-sm text-mist">여행 기록이 없습니다.</p>}
       </section>
 
       {previewPhotos.length > 0 && (

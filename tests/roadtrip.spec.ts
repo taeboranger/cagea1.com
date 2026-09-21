@@ -86,7 +86,7 @@ test("photo upload, EXIF GPS, memo editing, reload persistence, mobile layout an
     { name: "gps-test.jpg", mimeType: "image/jpeg", buffer: withGps },
     { name: "no-gps-test.png", mimeType: "image/png", buffer: noGps },
   ]);
-  await page.getByLabel("함께 남길 메모", { exact: false }).fill("첫 여행 메모");
+  await page.getByRole("region", { name: "사진 업로드" }).getByLabel("메모", { exact: false }).fill("첫 여행 메모");
   const uploaded: RoadtripPhoto[] = [];
   page.on("response", async (response) => {
     if (response.url().endsWith("/api/roadtrip") && response.status() === 201) {
@@ -94,7 +94,7 @@ test("photo upload, EXIF GPS, memo editing, reload persistence, mobile layout an
     }
   });
   await page.getByRole("button", { name: "사진 저장", exact: true }).click();
-  await expect(page.getByRole("status").filter({ hasText: "2장의 사진을 저장했습니다." })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("status").filter({ hasText: "2장 저장 완료" })).toBeVisible({ timeout: 30_000 });
   expect(uploaded).toHaveLength(2);
   const gps = uploaded.find((photo) => photo.originalName === "gps-test.jpg")!;
   expect(gps.location?.lat).toBeCloseTo(37.566666, 4);
@@ -103,14 +103,14 @@ test("photo upload, EXIF GPS, memo editing, reload persistence, mobile layout an
   expect(Math.max(gps.width, gps.height)).toBe(1920);
   expect(gps.height).toBeGreaterThan(gps.width);
   expect(uploaded.find((photo) => photo.originalName === "no-gps-test.png")?.location).toBeNull();
-  await page.getByLabel("이 순간의 메모").fill("수정한 여행 메모");
+  await page.getByLabel("메모", { exact: true }).fill("수정한 여행 메모");
   await page.getByLabel("위도", { exact: true }).fill("0");
   await page.getByLabel("경도", { exact: true }).fill("0");
   await page.getByRole("button", { name: "변경사항 저장" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "사진의 메모와 위치를 저장했습니다." })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^저장 완료$/ })).toBeVisible();
   await page.reload();
   await page.getByRole("button").filter({ hasText: "수정한 여행 메모" }).click();
-  await expect(page.getByLabel("이 순간의 메모")).toHaveValue("수정한 여행 메모");
+  await expect(page.getByLabel("메모", { exact: true })).toHaveValue("수정한 여행 메모");
   await expect(page.getByLabel("위도", { exact: true })).toHaveValue("0");
   await page.getByRole("button", { name: "지도에서 지정", exact: true }).click();
   const mapBox = await page.getByRole("region", { name: "지도", exact: true }).boundingBox();
@@ -119,7 +119,7 @@ test("photo upload, EXIF GPS, memo editing, reload persistence, mobile layout an
   await page.mouse.click(mapBox!.x + 180, mapBox!.y + 120);
   await expect(page.getByLabel("위도", { exact: true })).not.toHaveValue("0");
   await page.getByRole("button", { name: "변경사항 저장" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "사진의 메모와 위치를 저장했습니다." })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^저장 완료$/ })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("roadtrip-desktop-photos.png"), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: testInfo.outputPath("roadtrip-mobile.png"), fullPage: true });
@@ -260,9 +260,9 @@ test("repeated selections upload concurrently, retry failures, edit memos and de
   expect(peak).toBe(3);
   await expect(queue.getByRole("listitem")).toHaveCount(1);
   await expect(queue).toContainText("retry.png");
-  await expect(page.getByRole("status").filter({ hasText: "3장의 사진을 저장했습니다." })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "3장 저장 완료" })).toBeVisible();
   await page.getByRole("button", { name: "실패한 사진 다시 저장" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "1장의 사진을 저장했습니다." })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "1장 저장 완료" })).toBeVisible();
   expect(uploaded).toHaveLength(4);
   expect(new Set(uploaded.map((photo) => photo.id)).size).toBe(4);
   await page.unroute("**/api/roadtrip");
@@ -272,15 +272,15 @@ test("repeated selections upload concurrently, retry failures, edit memos and de
   await expect(page.getByRole("region", { name: "여행 사진 목록" }).getByRole("button", { name: "later.png 메모 수정" })).toBeVisible();
 
   await page.getByRole("button", { name: "a.png 메모 수정", exact: true }).click();
-  await expect(page.getByLabel("이 순간의 메모")).toBeFocused();
-  await page.getByLabel("이 순간의 메모").fill("업로드 후 바꾼 메모");
+  await expect(page.getByLabel("메모", { exact: true })).toBeFocused();
+  await page.getByLabel("메모", { exact: true }).fill("업로드 후 바꾼 메모");
   await page.getByRole("button", { name: "변경사항 저장" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "사진의 메모와 위치를 저장했습니다." })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^저장 완료$/ })).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: "a.png 메모 수정", exact: true }).click();
-  await expect(page.getByLabel("이 순간의 메모")).toHaveValue("업로드 후 바꾼 메모");
+  await expect(page.getByLabel("메모", { exact: true })).toHaveValue("업로드 후 바꾼 메모");
   await page.getByRole("button", { name: "b.png 메모 수정", exact: true }).click();
-  await expect(page.getByLabel("이 순간의 메모")).toHaveValue("");
+  await expect(page.getByLabel("메모", { exact: true })).toHaveValue("");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "여행 삭제", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "여행 삭제 확인" });

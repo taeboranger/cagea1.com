@@ -13,7 +13,6 @@ export default function TripCards({ trips, authed = false }: { trips: RoadtripSu
               <path d="M4 40 25 13l16 20 10-13 17 20H4Z" stroke="currentColor" strokeWidth="1" />
               <circle cx="52" cy="10" r="4" stroke="currentColor" />
             </svg>
-            <span className="text-xs tracking-wider">이 여행의 첫 사진을 기다립니다</span>
           </div>}
         <span className="absolute bottom-3 left-3 bg-paper/95 px-2.5 py-1 text-xs text-ink-soft">사진 {trip.photoCount}장</span>
       </div>
