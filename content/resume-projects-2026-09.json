@@ -1,0 +1,18 @@
+[
+  {
+    "id": "a9dcd5b3-272d-4b70-8921-46e3380aef36",
+    "title": "SKKEDULE",
+    "period": "",
+    "link": "https://skkedule.scg.skku.ac.kr",
+    "githubLink": "https://github.com/SystemConsultantGroup/timetable-planner-frontend",
+    "description": "<p>개인의 학적 정보와 졸업 요건을 바탕으로 강의를 탐색하고 시간표를 구성하는 서비스.</p><p>입학년도·전공 구성·이수 과목·인증영역별 기준을 공통 데이터 구조와 처리 흐름으로 연결하는 개발에 참여. 공통 강의·졸업 요건 데이터와 사용자별 학적·이수 데이터를 연계하여 학적 정보 입력 → 이수 내역 반영 → 요건별 충족 현황 확인 → 필요한 영역의 강의 검색 → 시간표 구성으로 이어지는 흐름을 구현.</p><p>기술 스택 — Java, Spring Boot, JPA (백엔드) · TypeScript, Next.js (프론트엔드) · JavaScript, Chrome Extension (학적·이수 내역 연동)</p>"
+  },
+  {
+    "id": "c0dd30b5-776e-4476-a37c-f97c9a8d83aa",
+    "title": "SKKU Ping",
+    "period": "",
+    "link": "",
+    "githubLink": "https://github.com/taeboranger/skku-hackathon-team6",
+    "description": "<p>캠퍼스 질문을 AI로 분석하여 기존 답변이나 적합한 사람에게 연결하는 해커톤 프로젝트.</p><p>서비스는 실시간 정보 필요 여부·학과·장소·답변 형태를 구조화하고, 일반 질문은 유사 질문·답변 검색을 바탕으로 출처 링크가 포함된 답변을 생성. 현장 확인이 필요하거나 검색 근거가 부족하면 학과·거리·유사 질문 이력·답변 응답률로 사용자를 매칭하여 웹 푸시로 요청하고 해결 상태를 관리.</p><p>아이디어 제안, AI를 활용한 데모 초안 작업, 서비스 흐름·프로젝트 구성 정리, 문서화와 최종 발표를 담당. 팀원들이 프론트엔드·인프라 등 데모 마무리를 담당.</p><p>기술 스택 — TypeScript, React · OpenAI API (질문 분석·답변 생성) · Cloudflare D1 (데이터 저장) · Web Push</p>"
+  }
+]

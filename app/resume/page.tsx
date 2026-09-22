@@ -154,8 +154,8 @@ export default async function ResumePage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-16 sm:px-10">
       <div className="border border-line bg-paper-raised px-6 py-10 shadow-[0_1px_24px_-8px_rgba(26,34,48,0.25)] sm:px-12 sm:py-14">
-        <div className="mb-10 flex items-start justify-between gap-6">
-          <div>
+        <div className="mb-10 flex flex-col items-start justify-between gap-6 sm:flex-row">
+          <div className="min-w-0 break-words">
             <h1 className="font-serif text-4xl text-ink">{resume.name}</h1>
             {resume.title && (
               <p className="mt-2 font-sans text-lg text-ink-soft">
@@ -169,7 +169,7 @@ export default async function ResumePage() {
             )}
           </div>
           {authed && (
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex max-w-full flex-wrap items-center gap-2 sm:shrink-0">
               {!resume.isPublic && (
                 <span className="border border-accent/40 px-2 py-1 font-sans text-xs text-accent">
                   비공개
