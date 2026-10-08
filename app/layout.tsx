@@ -10,6 +10,8 @@ const shipporiMincho = Shippori_Mincho({
   variable: "--font-shippori-mincho",
   weight: ["400", "600"],
   subsets: ["latin"],
+  // Google Fonts omits subset comments on CJK shards, causing excess preloads.
+  preload: false,
 });
 
 const notoSerifKr = Noto_Serif_KR({
